@@ -25,6 +25,7 @@ class NetflixMLPipeline:
         self.trained = False
         self.feature_names = []
         self.label_encoder = LabelEncoder()
+        self.rating_encoder = LabelEncoder()
 
     def load_and_engineer(self):
         raw_df = pd.read_csv(self.csv_filepath)
@@ -79,7 +80,7 @@ class NetflixMLPipeline:
             flag_key = f'country_{country_name.replace(" ", "_").lower()}'
             raw_df[flag_key] = (raw_df['country'] == country_name).astype(int)
 
-        raw_df['rating_encoded'] = LabelEncoder().fit_transform(raw_df['rating'].astype(str))
+        raw_df['rating_encoded'] = self.rating_encoder.fit_transform(raw_df['rating'].astype(str))
         raw_df['is_movie'] = (raw_df['type'] == 'Movie').astype(int)
 
         self.df = raw_df
@@ -110,6 +111,24 @@ class NetflixMLPipeline:
         self.feature_names = f_cols
         return X, y
 
+    def train_rf_only(self):
+        if 'Random Forest' in self.models:
+            return self.models['Random Forest']['model']
+        X, y = self._prepare_features()
+        if not hasattr(self.label_encoder, 'classes_') or len(self.label_encoder.classes_) == 0:
+            encoded_targets = self.label_encoder.fit_transform(y)
+        else:
+            encoded_targets = self.label_encoder.transform(y)
+
+        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
+            X, encoded_targets, test_size=0.2, random_state=42, stratify=encoded_targets
+        )
+
+        rf = RandomForestClassifier(n_estimators=100, max_depth=12, random_state=42, n_jobs=1)
+        rf.fit(self.X_train, self.y_train)
+        self.models['Random Forest'] = {'model': rf, 'scaler': None}
+        return rf
+
     def train_models(self):
         X, y = self._prepare_features()
         encoded_targets = self.label_encoder.fit_transform(y)
@@ -123,17 +142,16 @@ class NetflixMLPipeline:
         X_test_norm = scaler.transform(self.X_test)
 
         algo_pool = {
-            'Random Forest': RandomForestClassifier(n_estimators=150, max_depth=12, random_state=42, n_jobs=-1),
-            'Gradient Boosting': GradientBoostingClassifier(n_estimators=100, max_depth=5, random_state=42),
-            'Logistic Regression': LogisticRegression(max_iter=1000, C=1.0, random_state=42),
-            'SVM': SVC(kernel='rbf', C=1.5, probability=True, random_state=42),
-            'KNN': KNeighborsClassifier(n_neighbors=7, n_jobs=-1),
+            'Random Forest': RandomForestClassifier(n_estimators=100, max_depth=12, random_state=42, n_jobs=1),
+            'Gradient Boosting': GradientBoostingClassifier(n_estimators=60, max_depth=4, random_state=42),
+            'Logistic Regression': LogisticRegression(max_iter=500, C=1.0, random_state=42),
+            'SVM': SVC(kernel='rbf', C=1.0, max_iter=1500, random_state=42),
+            'KNN': KNeighborsClassifier(n_neighbors=5, n_jobs=1),
         }
 
         eval_summary = {}
 
         for name, clf in algo_pool.items():
-            # tree models don't need scaling, only linear/distance ones do
             needs_scale = name in ['Logistic Regression', 'SVM', 'KNN']
             train_feats = X_train_norm if needs_scale else self.X_train
             test_feats = X_test_norm if needs_scale else self.X_test
@@ -141,8 +159,8 @@ class NetflixMLPipeline:
             clf.fit(train_feats, self.y_train)
             test_preds = clf.predict(test_feats)
 
-            # 5-fold cross validation for generalizability
-            cv_accs = cross_val_score(clf, train_feats, self.y_train, cv=5, scoring='accuracy', n_jobs=-1)
+            # 3-fold cross validation with n_jobs=1 to prevent Windows multiprocessing deadlock
+            cv_accs = cross_val_score(clf, train_feats, self.y_train, cv=3, scoring='accuracy', n_jobs=1)
 
             eval_summary[name] = {
                 'accuracy': round(float(accuracy_score(self.y_test, test_preds)) * 100, 2),
@@ -163,6 +181,8 @@ class NetflixMLPipeline:
         return {'models': eval_summary, 'classes': list(self.label_encoder.classes_)}
 
     def get_feature_importance(self):
+        if 'Random Forest' not in self.models:
+            self.train_rf_only()
         rf_model = self.models['Random Forest']['model']
         scores = rf_model.feature_importances_
 
@@ -174,6 +194,8 @@ class NetflixMLPipeline:
         return {'features': top_names, 'importances': top_scores}
 
     def get_confusion_matrix(self, model_name='Random Forest'):
+        if not self.trained and model_name not in self.models:
+            self.train_rf_only()
         model_info = self.models.get(model_name, self.models.get('Random Forest'))
         estimator = model_info['model']
 
@@ -190,8 +212,8 @@ class NetflixMLPipeline:
         }
 
     def predict_single(self, user_inputs):
-        if not self.trained:
-            self.train_models()
+        if 'Random Forest' not in self.models:
+            self.train_rf_only()
 
         rf_clf = self.models['Random Forest']['model']
 
@@ -202,9 +224,21 @@ class NetflixMLPipeline:
         sample_row['year_added'] = int(user_inputs.get('year_added', 2021))
         sample_row['month_added'] = int(user_inputs.get('month_added', 6))
         sample_row['genre_count'] = int(user_inputs.get('genre_count', 2))
-        sample_row['rating_encoded'] = int(user_inputs.get('rating_encoded', 3))
+        
+        rating_val = str(user_inputs.get('rating', 'TV-MA'))
+        if hasattr(self, 'rating_encoder') and rating_val in self.rating_encoder.classes_:
+            sample_row['rating_encoded'] = int(self.rating_encoder.transform([rating_val])[0])
+        else:
+            sample_row['rating_encoded'] = int(user_inputs.get('rating_encoded', 3))
+
         sample_row['duration_value'] = float(user_inputs.get('duration', 90))
         sample_row['content_age'] = max(0, sample_row['year_added'] - sample_row['release_year'])
+
+        ref_date = pd.to_datetime('2008-01-01')
+        approx_date = pd.to_datetime(f"{sample_row['year_added']}-{sample_row['month_added']:02d}-01", errors='coerce')
+        if pd.isna(approx_date):
+            approx_date = ref_date
+        sample_row['days_to_add'] = max(0, (approx_date - ref_date).days)
 
         origin_country = user_inputs.get('country', '')
         country_col = f"country_{origin_country.replace(' ', '_').lower()}"

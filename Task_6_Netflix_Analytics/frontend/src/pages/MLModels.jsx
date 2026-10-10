@@ -35,8 +35,11 @@ export default function MLModels() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('comparison');
 
+  const [errorMsg, setErrorMsg] = useState(null);
+
   const handleTrain = async () => {
     setLoading(true);
+    setErrorMsg(null);
     try {
       const res = await trainModels();
       setResults(res);
@@ -44,8 +47,12 @@ export default function MLModels() {
       setFeatureImp(fi);
       const cm = await fetchConfusionMatrix('Random Forest');
       setConfMatrix(cm);
-    } catch (e) { console.error(e); }
-    setLoading(false);
+    } catch (e) {
+      console.error(e);
+      setErrorMsg('Failed to connect to backend server on port 5006. Please ensure Flask is running.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleModelSelect = async (name) => {
@@ -95,12 +102,17 @@ export default function MLModels() {
             </span>
           )}
         </div>
+        {errorMsg && (
+          <div style={{ marginTop: 12, padding: '10px 16px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', borderRadius: 8, color: '#fca5a5', fontSize: 13 }}>
+            ⚠️ {errorMsg}
+          </div>
+        )}
       </div>
 
       {loading && (
         <div className="loading-container">
           <div className="spinner" />
-          <div className="loading-text">Training 5 models with 5-fold cross-validation… (30–60s)</div>
+          <div className="loading-text">⚡ Training 5 benchmark models with cross-validation… (~2–3s)</div>
         </div>
       )}
 

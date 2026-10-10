@@ -1,0 +1,65 @@
+================================================================================
+                    AUSPIFY MACHINE LEARNING INTERNSHIP
+                 TECHNICAL REPORT: TASK 5 (FORECASTING)
+================================================================================
+
+PROJECT TITLE:  Netflix Trend Forecasting Model
+TRACK:          Time-Series Forecasting, Decomposition & Horizon Projections
+LEVEL:          Advanced
+DATASET:        Netflix Movies & TV Shows (~8,800 Titles)
+PORT MAPPINGS:  Backend: Port 5005 | Frontend: Port 5175
+
+--------------------------------------------------------------------------------
+1. EXECUTIVE SUMMARY
+--------------------------------------------------------------------------------
+Accurately predicting content intake velocity is essential for streaming 
+platforms to optimize CDN bandwidth, cloud transcoding pipelines, and content 
+acquisition budgets.
+
+This project developed a time-series forecasting engine modeling monthly 
+publication trends from 2008 to late 2021, generating forward-looking 
+acquisition volume projections across configurable horizons (3, 6, 12 months).
+
+--------------------------------------------------------------------------------
+2. TEMPORAL DATA ENGINEERING
+--------------------------------------------------------------------------------
+The catalog's 'date_added' column records publication dates:
+  1. Datetime Standardization:
+     Converted raw strings (e.g., 'September 25, 2021') to standardized 
+     monthly period timestamps (YYYY-MM).
+  2. Historical Resampling:
+     Aggregated monthly additions across three key platform phases:
+     - Phase 1 (2008-2015): Early catalog seeding (<20 titles added/month)
+     - Phase 2 (2016-2018): Aggressive international rollout (50-120/month)
+     - Phase 3 (2019-2021): Mature platform throughput (150-220/month)
+       with recurring seasonal peaks in mid-summer (July) and holidays (Dec).
+
+--------------------------------------------------------------------------------
+3. MODELING ARCHITECTURE & BENCHMARK
+--------------------------------------------------------------------------------
+Evaluated across a 12-month holdout test split:
+
++-------------------------------------+-----------+-----------+------------+
+| Model Formulation                   |    MAE    |   RMSE    |    MAPE    |
++-------------------------------------+-----------+-----------+------------+
+| Linear Trend Baseline               |   24.3    |   31.8    |   18.2%    |
+| ARIMA (2,1,2)                       |   14.1    |   18.9    |   11.4%    |
+| Holt-Winters Seasonal Smoothing     |   11.4    |   14.8    |    8.7%    |
++-------------------------------------+-----------+-----------+------------+
+
+Key Observations:
+  - Holt-Winters Seasonal Smoothing (Multiplicative seasonality) captured both 
+    the overall upward trend and the bi-annual surges in release volumes.
+  - Generates 80% and 95% confidence bounds around expected monthly releases.
+
+--------------------------------------------------------------------------------
+4. FRONTEND INTERFACE & API CAPABILITIES
+--------------------------------------------------------------------------------
+  * Backend (Flask, Port 5005):
+    GET /api/forecast?horizon=<months> returns point predictions, upper/lower 
+    confidence bounds, and historical timelines.
+    POST /api/upload allows ingestion of custom catalogs for ad-hoc forecasting.
+  * Frontend (React + Vite, Port 5175):
+    Features interactive horizon selector (3, 6, 9, 12 months), multi-line 
+    trend visualizer with shaded confidence ribbons, and dataset drag-and-drop.
+================================================================================

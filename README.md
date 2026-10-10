@@ -6,6 +6,36 @@ The project is divided into four main tasks covering classification, unsupervise
 
 ---
 
+## Repository Organization & Deliverables
+
+This repository is organized in accordance with industry submission standards:
+
+```plaintext
+Auspify/
+├── docs/                     # Word (.docx) & Markdown system documentation
+│   ├── ARCHITECTURE.docx / .md
+│   ├── SETUP_GUIDE.docx / .md
+│   └── API_REFERENCE.docx / .md
+├── reports/                  # Formatted Text (.txt) & Markdown technical reports
+│   ├── Task_3_Report.txt / .md
+│   ├── Task_4_Report.txt / .md
+│   ├── Task_5_Report.txt / .md
+│   ├── Task_6_Report.txt / .md
+│   └── Final_Internship_Report.txt / .md
+├── presentations/            # PowerPoint (.pptx) presentation deck & notes
+│   ├── Auspify_Final_Presentation.pptx
+│   ├── SLIDE_DECK_CONTENT.md
+│   └── README.md
+├── screenshots/              # UI screenshots, visual proofs & evaluation plots
+│   └── README.md
+├── Task_3_Audience_Rating_Classification/  # Source code
+├── Task_4_Netflix_Content_Segmentation/   # Source code
+├── Task_5_Netflix_Trend_Forecasting_Model/# Source code
+└── Task_6_Netflix_Analytics/              # Source code
+```
+
+---
+
 ## Project Summary
 
 | Task | Title | Level | Backend Port | Frontend Port | Folder |

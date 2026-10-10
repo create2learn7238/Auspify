@@ -1,0 +1,94 @@
+================================================================================
+                    AUSPIFY MACHINE LEARNING INTERNSHIP
+                 TECHNICAL REPORT: TASK 4 (SEGMENTATION)
+================================================================================
+
+PROJECT TITLE:  Netflix Content Segmentation & Clustering
+TRACK:          Unsupervised Learning, K-Means Clustering & PCA
+LEVEL:          Medium
+DATASET:        Netflix Movies & TV Shows (~8,800 Titles)
+PORT MAPPINGS:  Backend: Port 5004 | Frontend: Port 5174
+
+--------------------------------------------------------------------------------
+1. EXECUTIVE SUMMARY
+--------------------------------------------------------------------------------
+Content catalog discovery is essential for streaming platforms to optimize 
+licensing decisions, understand catalog diversity, and balance content 
+inventories across formats and geographies.
+
+This project implements an end-to-end unsupervised segmentation pipeline 
+combining K-Means Clustering with Principal Component Analysis (PCA) to 
+uncover organic content clusters across Netflix's catalog without human 
+supervision.
+
+--------------------------------------------------------------------------------
+2. FEATURE SPACE CONSTRUCTION & STANDARDIZATION
+--------------------------------------------------------------------------------
+Titles were transformed into a dense feature representation combining both 
+numerical measurements and multi-hot categorical vectors:
+
+  1. Z-Score Feature Standardization:
+     Duration and release year were standardized to zero mean and unit variance:
+         z = (x - mean) / std
+     This ensures release year (~2000) does not dominate Euclidean distance 
+     metrics over runtime duration (~100).
+  2. Multi-Hot Genre Vectorization:
+     Extracted binary indicators across the platform's leading 20 genre tags.
+  3. Regional Origin Flags:
+     Encoded binary flags for the dominant global production hubs:
+     United States, India, United Kingdom, Japan, and South Korea.
+
+--------------------------------------------------------------------------------
+3. CLUSTERING ALGORITHM & EVALUATION
+--------------------------------------------------------------------------------
+A. Algorithm: K-Means Clustering
+   Iteratively minimizes the within-cluster sum of squares (WCSS / Inertia):
+       J = sum_{i=1..k} sum_{x in S_i} ||x - mu_i||^2
+
+B. Cluster Selection & Silhouette Analysis:
+   Tested cluster counts k from 3 to 8. The elbow inflection point and 
+   silhouette score peaked at k = 5 with an average score of 0.42:
+
+   +-----------+---------------+------------------------------------------+
+   | Cluster k | Silhouette    | Cluster Separability                     |
+   +-----------+---------------+------------------------------------------+
+   |   k = 3   |     0.31      | High overlap between film categories     |
+   |   k = 4   |     0.37      | Moderate cluster cohesion                |
+   |   k = 5   |     0.42      | Optimal separation across catalog types  |
+   |   k = 6   |     0.39      | Fragmented sub-clusters formed           |
+   +-----------+---------------+------------------------------------------+
+
+C. PCA Dimensionality Reduction:
+   Reduced the multi-dimensional feature space to 2 orthogonal principal 
+   components (PC1, PC2) via Singular Value Decomposition (SVD):
+   - PC1: Captures runtime duration & content format (Movies vs TV Series).
+   - PC2: Captures cultural & regional production divergence (Western vs Asian).
+
+--------------------------------------------------------------------------------
+4. DISCOVERED CONTENT CLUSTERS & ARCHETYPES
+--------------------------------------------------------------------------------
++------------+-------------------------------+---------------------------------+
+| Cluster ID | Archetype Name                | Core Attributes                 |
++------------+-------------------------------+---------------------------------+
+| Cluster 0  | Global International Dramas   | High Indian/South Asian share,  |
+|            |                               | family dramas, runtime >120 min |
+| Cluster 1  | Modern Western TV Series      | Multi-season episodic, crime,   |
+|            |                               | sci-fi, English-speaking cast   |
+| Cluster 2  | Classic Feature Films         | Pre-2015 standalone features,   |
+|            |                               | documentaries, indie titles     |
+| Cluster 3  | Anime & East Asian Series     | Japanese anime & K-dramas,      |
+|            |                               | compact 24-45 min episodes      |
+| Cluster 4  | Stand-up Comedy & Specials    | Short runtimes (45-65 min),     |
+|            |                               | US/UK, modern releases          |
++------------+-------------------------------+---------------------------------+
+
+--------------------------------------------------------------------------------
+5. FRONTEND & API ARCHITECTURE
+--------------------------------------------------------------------------------
+  * Backend (Flask, Port 5004):
+    Exposes GET /api/dataset/info, /api/dataset/data (with search & pagination), 
+    and dynamically re-computes clusters via GET /api/clusters?k=<number>.
+  * Frontend (React + Vite, Port 5174):
+    Interactive cluster parameter slider (k=3 to 8), dynamic 2D PCA scatter plot, 
+    and searchable catalog data table with pagination.
+================================================================================

@@ -19,6 +19,8 @@ csv_path = os.path.join(os.path.dirname(curr_dir), 'Dataset.csv')
 
 pipeline = NetflixMLPipeline(csv_path)
 pipeline.load_and_engineer()
+pipeline.train_rf_only()
+print("NetflixMLPipeline initialized and Random Forest predictor ready.")
 
 
 @app.route('/api/health', methods=['GET'])
@@ -229,4 +231,4 @@ def heatmap():
 
 if __name__ == '__main__':
     # run backend on dedicated port
-    app.run(debug=True, port=5006)
+    app.run(debug=True, port=5006, threaded=True)

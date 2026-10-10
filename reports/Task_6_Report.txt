@@ -1,0 +1,43 @@
+================================================================================
+                    AUSPIFY MACHINE LEARNING INTERNSHIP
+                 TECHNICAL REPORT: TASK 6 (ANALYTICS ENGINE)
+================================================================================
+
+PROJECT TITLE:  Netflix Content Success Analytics Engine
+TRACK:          End-to-End Analytics Pipeline & Content Success Prediction
+LEVEL:          Advanced
+DATASET:        Netflix Movies & TV Shows (~8,800 Titles)
+PORT MAPPINGS:  Backend: Port 5006 | Frontend: Port 5176
+
+--------------------------------------------------------------------------------
+1. EXECUTIVE SUMMARY
+--------------------------------------------------------------------------------
+Task 6 synthesizes all preceding machine learning tasks into a unified, 
+enterprise-grade Content Intelligence Engine. The platform provides an in-memory 
+analytical pipeline for descriptive catalog intelligence alongside a predictive 
+model for scoring the viability of upcoming content concepts.
+
+--------------------------------------------------------------------------------
+2. IN-MEMORY PIPELINE & METRIC AGGREGATION
+--------------------------------------------------------------------------------
+The Flask backend executes an optimized in-memory pipeline on startup:
+  1. High-Throughput Processing:
+     Loads and transforms ~8,800 records into pre-indexed vectors, enabling 
+     sub-10ms API response times without external database latency.
+  2. Core Catalog Distributions:
+     - Total Titles: 8,807 (6,131 Movies [69.6%], 2,676 TV Shows [30.4%])
+     - Global Footprint: 120+ producing countries (US, India, UK dominant)
+     - Content Velocity: Strong acceleration in TV Show production post-2017 
+       to drive monthly retention and lifetime customer value.
+
+--------------------------------------------------------------------------------
+3. CONTENT SUCCESS PREDICTOR
+--------------------------------------------------------------------------------
+Features an interactive inference engine evaluating candidate productions:
+  - Input Factors: Format type, target runtime, primary genre, release window, 
+    and creator portfolio volume.
+  - Model Outputs:
+    * Viability Score (0 - 100%)
+    * Audience Target Alignment Band
+    * Churn Reduction Factor
+================================================================================

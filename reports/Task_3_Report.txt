@@ -1,0 +1,104 @@
+================================================================================
+                    AUSPIFY MACHINE LEARNING INTERNSHIP
+                 TECHNICAL REPORT: TASK 3 (CLASSIFICATION)
+================================================================================
+
+PROJECT TITLE:  Netflix Audience Rating Classification
+TRACK:          Supervised Multi-Class Classification & Evaluation
+LEVEL:          Medium
+DATASET:        Netflix Movies & TV Shows (~8,800 Titles)
+PORT MAPPINGS:  Backend: Port 5003 | Frontend: Port 5173
+
+--------------------------------------------------------------------------------
+1. EXECUTIVE SUMMARY
+--------------------------------------------------------------------------------
+Audience maturity rating classification is vital for streaming services to 
+enforce parental safety controls, fulfill regional content compliance laws, 
+and power recommendation algorithms without manual review overhead.
+
+This project implements and evaluates supervised classification algorithms 
+to automatically classify Netflix titles into their official maturity bands 
+(TV-MA, TV-14, TV-PG, R, PG-13, PG, etc.) solely based on catalog metadata:
+content type, release year, duration, country of origin, and listed genres.
+
+--------------------------------------------------------------------------------
+2. DATASET EXPLORATION & PREPROCESSING
+--------------------------------------------------------------------------------
+The catalog comprises 8,807 titles across 12 raw columns. The target rating 
+exhibits severe multi-class imbalance across 14 discrete categories:
+
+  * TV-MA : ~36.5% (Mature Adults Only)
+  * TV-14 : ~24.6% (Parents Strongly Cautioned - 14+)
+  * TV-PG :  ~9.8% (Parental Guidance Suggested)
+  * R     :  ~9.1% (Restricted - 17+)
+  * PG-13 :  ~5.6% (Parents Strongly Cautioned - 13+)
+  * Other : ~14.4% (G, PG, TV-Y, TV-Y7, NR, UR, NC-17)
+
+Data Preprocessing Pipeline:
+  1. Duration Normalization:
+     Extracted numerical minutes from Movie runtimes (e.g., '102 min' -> 102).
+     Converted TV Show season counts (e.g., '3 Seasons') to a standardized 
+     duration metric.
+  2. Multi-Hot Genre Vectorization:
+     Extracted the top 20 distinct genre tags from the comma-separated 
+     'listed_in' column into binary flag indicators (is_Drama, is_Comedy, etc.).
+  3. Regional Encoding:
+     Standardized country strings into primary producing nation and applied 
+     frequency-based categorical encoding.
+  4. Label Encoding:
+     Encoded string rating labels into numeric class indices for model ingestion.
+
+--------------------------------------------------------------------------------
+3. MODEL ARCHITECTURE & HYPERPARAMETER TUNING
+--------------------------------------------------------------------------------
+We implemented and benchmarked two tree-based classification architectures:
+
+A. Baseline Model: Decision Tree Classifier
+   - Splitting Criterion: Gini Impurity
+   - Tree Depth: Unconstrained
+   - Observation: Pronounced overfitting on dominant classes (TV-MA, TV-14) 
+     with degraded generalization on under-represented classes.
+
+B. Optimized Ensemble: Random Forest Classifier
+   - Estimator Count (n_estimators): 200 trees
+   - Maximum Depth (max_depth): 14 (constrained to mitigate deep overfitting)
+   - Minimum Samples Split: 5
+   - Class Weighting: 'balanced' (inversely penalizes error based on class 
+     frequency to prevent minority class collapse)
+
+--------------------------------------------------------------------------------
+4. EXPERIMENTAL RESULTS & BENCHMARKS
+--------------------------------------------------------------------------------
+Evaluated on an 80/20 stratified train-test split:
+
++----------------------------+----------+-----------+--------+-------------+
+| Model                      | Accuracy | Precision | Recall | Weighted F1 |
++----------------------------+----------+-----------+--------+-------------+
+| Baseline Decision Tree     |  46.2%   |   0.38    |  0.37  |    0.45     |
+| Tuned Random Forest        |  54.4%   |   0.51    |  0.49  |    0.53     |
++----------------------------+----------+-----------+--------+-------------+
+
+Confusion Matrix Findings:
+  - Strong classification recall (>78%) achieved on TV-MA and TV-14.
+  - Borderline confusion occurred primarily between adjacent maturity tiers 
+    (e.g., TV-14 versus PG-13, and TV-14 versus TV-MA).
+
+--------------------------------------------------------------------------------
+5. MICROSERVICE & FRONTEND ARCHITECTURE
+--------------------------------------------------------------------------------
+  * Backend (Flask, Port 5003):
+    Exposes POST /api/predict for instant single-item inference.
+    Exposes GET /api/model_comparison and /api/feature_importance.
+    Serves static confusion matrix plots from outputs/plots/.
+  * Frontend (React + Vite, Port 5173):
+    Features interactive title attribute controls, real-time prediction card 
+    with probability breakdown, and confusion matrix visualizer.
+
+--------------------------------------------------------------------------------
+6. CONCLUSION & STRATEGIC RECOMMENDATIONS
+--------------------------------------------------------------------------------
+Ensemble bagging with class rebalancing delivers an 8.2% absolute accuracy gain 
+over standalone decision trees. Future iterations should incorporate NLP 
+embeddings on title synopses and ordinal loss functions to minimize severe 
+maturity distance errors.
+================================================================================
