@@ -18,7 +18,7 @@
 
 ---
 
-## 📑 Table of Contents
+## 📑 Table of Contents 
 
 - [Project Overview](#-project-overview)
 - [Repository Structure](#-repository-structure)
