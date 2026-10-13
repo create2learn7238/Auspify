@@ -11,7 +11,6 @@
 [![scikit-learn](https://img.shields.io/badge/scikit--learn-1.x-F7931E?logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-> **Internship Period:** September 16 – October 16  
 > **Organization:** Auspify  
 > **Dataset:** Netflix Movies & TV Shows (~8,800 titles, Kaggle)
 
