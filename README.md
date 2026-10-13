@@ -1,6 +1,6 @@
 ﻿<div align="center">
 
-# 🎬 Auspify — Netflix ML Internship Suite
+# 🎬 Auspify — Netflix ML Suite 16 Sep - 16 Oct
 
 **End-to-end Machine Learning applications built on the Netflix Movies & TV Shows dataset**
 
